@@ -1,20 +1,20 @@
-import User from "../models/User.js";
-import bcrypt from "bcryptjs";
+import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 export const registerUser = async (req, res) => {
   const { firstName, lastName, address, email, phoneNumber, birthDate, password } = req.body;
   if (!firstName || !lastName || !address || !email || !phoneNumber || !birthDate || !password) {
-    return res.status(400).json({ message: "Please provide all fields" });
+    return res.status(400).json({ message: 'Please provide all fields' });
   }
 
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(409).json({ message: "User already exists" });
+      return res.status(409).json({ message: 'User already exists' });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -30,7 +30,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
     });
     res.status(201).json({
-      message: "User registered",
+      message: 'User registered',
       user: {
         email: user.email,
         firstName: user.firstName,
@@ -38,15 +38,46 @@ export const registerUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const users = await User.find().select('-password');
     res.status(200).json(users);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Please provide email and password' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    res.status(200).json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
   }
 };
