@@ -3,12 +3,14 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
+import cors from 'cors'; // Import cors
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: 'http://localhost:5173' })); // Enable CORS
 
 app.get("/", (req, res) => {
     res.send("Hello world");

@@ -1,8 +1,10 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 export const registerUser = async (req, res) => {
   const { firstName, lastName, address, email, phoneNumber, birthDate, password } = req.body;
+  
   if (!firstName || !lastName || !address || !email || !phoneNumber || !birthDate || !password) {
     return res.status(400).json({ message: 'Please provide all fields' });
   }
@@ -29,8 +31,16 @@ export const registerUser = async (req, res) => {
       birthDate,
       password: hashedPassword,
     });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     res.status(201).json({
       message: 'User registered',
+      token,
       user: {
         email: user.email,
         firstName: user.firstName,
@@ -38,16 +48,8 @@ export const registerUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-export const getUsers = async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Register error:', err);
+    res.status(500).json({ message: `Server error: ${err.message}` });
   }
 };
 
@@ -68,8 +70,15 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     res.status(200).json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         email: user.email,
@@ -78,6 +87,76 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Login error:', err); // Added detailed logging
+    res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { firstName, lastName, address, phoneNumber, birthDate } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { firstName, lastName, address, phoneNumber, birthDate },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: 'Profile updated', user });
+  } catch (err) {
+    res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Please provide current and new password' });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+};
+
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: `Server error: ${err.message}` });
   }
 };
