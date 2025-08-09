@@ -4,32 +4,7 @@ import axios from 'axios';
 import Header from './Header';
 import Footer from './Footer';
 import backgroundImage from '../assets/0002.jpg';
-
-// Sidebar Component
-function Sidebar() {
-  return (
-    <aside className="w-64 bg-[#2A012F] text-white p-6 hidden md:block">
-      <h3 className="text-xl font-bold mb-6">Menu</h3>
-      <ul className="space-y-4">
-        <li>
-          <Link to="/" className="hover:underline">Home</Link>
-        </li>
-        <li>
-          <Link to="/tasklist" className="hover:underline">Task List</Link>
-        </li>
-        <li>
-          <Link
-            to="/tasks/new"
-            className="flex items-center space-x-2 bg-[#36013F] hover:bg-[#2A012F] px-3 py-2 rounded w-fit"
-          >
-            <span className="text-lg font-bold">+</span>
-            <span>Add Task</span>
-          </Link>
-        </li>
-      </ul>
-    </aside>
-  );
-}
+import FixedSidebar from './FixedSidebar';
 
 function TaskList() {
   const [tasks, setTasks] = useState([]);
@@ -38,13 +13,21 @@ function TaskList() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const userToken = localStorage.getItem('userToken');
+    if (!userToken) {
+      setMessage('Please log in to view tasks');
+      return;
+    }
+
     const fetchTasks = async () => {
       try {
-        const res = await axios.get('/api/tasks');
+        const res = await axios.get('/tasks', { // Matches backend route
+          headers: { Authorization: `Bearer ${userToken}` },
+        });
         setTasks(res.data);
       } catch (err) {
         console.error('Fetch tasks error:', err.response?.data || err.message);
-        setMessage('Failed to load tasks');
+        setMessage('Failed to load tasks or unauthorized access');
       } finally {
         setLoading(false);
       }
@@ -55,18 +38,22 @@ function TaskList() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
-        await axios.delete(`/api/tasks/${id}`);
+        const userToken = localStorage.getItem('userToken');
+        await axios.delete(`/tasks/${id}`, {
+          headers: { Authorization: `Bearer ${userToken}` },
+        });
         setTasks(tasks.filter(task => task._id !== id));
         setMessage('Task deleted successfully');
         setTimeout(() => setMessage(''), 2000);
       } catch (err) {
         console.error('Delete error:', err.response?.data || err.message);
-        setMessage('Failed to delete task');
+        setMessage('Failed to delete task or unauthorized access');
       }
     }
   };
 
   const handleEdit = (id) => {
+    console.log('Navigating to edit for ID:', id); // Debug log
     navigate(`/taskform/${id}`);
   };
 
@@ -80,14 +67,9 @@ function TaskList() {
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
       <Header />
-
-      {/* Layout with sidebar and main content */}
       <div className="flex flex-grow">
-        {/* Sidebar */}
-        <Sidebar />
-
-        {/* Main Content */}
-        <main className="flex-grow flex flex-col items-center justify-start px-4 py-8">
+        <FixedSidebar />
+        <main className="flex-grow flex flex-col items-center justify-start px-4 py-8 ml-64">
           <div className="w-full max-w-5xl">
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Task List</h2>
             {message && <p className="text-gray-900 mb-4 text-center">{message}</p>}
@@ -100,17 +82,18 @@ function TaskList() {
                 {tasks.map(task => (
                   <div
                     key={task._id}
-                    className="bg-white/90 p-4 rounded-lg shadow-md border border-gray-200 cursor-pointer hover:bg-gray-100"
+                    className="bg-black/70 p-8 rounded-xl shadow-md flex-shrink-0 text-white cursor-pointer hover:bg-black/80"
                     onClick={() => handleView(task._id)}
                   >
-                    <h3 className="text-lg font-semibold text-gray-800">{task.title}</h3>
-                    <p className="text-gray-600 mb-2">{task.description}</p>
-                    <p className="text-gray-500 mb-2">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
-                    <p className="text-gray-500 mb-2">Status: {task.status}</p>
+                    <h3 className="text-lg font-semibold">{task.title}</h3>
+                    <p className="text-gray-300 mb-2">{task.description}</p>
+                    <p className="text-gray-400 mb-2">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
+                    <p className="text-gray-400 mb-2">Status: {task.status}</p>
+                    <p className="text-gray-400 mb-2">Priority: {task.priority}</p> {/* New Priority display */}
                     <div className="flex space-x-2 mt-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleEdit(task._id); }}
-                        className="bg-blue-500 text-white p-1 rounded mr-2 hover:bg-blue-600"
+                        className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
                       >
                         Edit
                       </button>
@@ -128,7 +111,6 @@ function TaskList() {
           </div>
         </main>
       </div>
-
       <Footer />
     </div>
   );
