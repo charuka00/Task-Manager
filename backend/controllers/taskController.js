@@ -1,9 +1,9 @@
 import Task from "../models/Task.js";
 
 export const createTask = async (req, res) => {
-  const { title, description, dueDate, status } = req.body;
-  if (!title || !description || !dueDate || !status) {
-    console.error('Validation error:', { title, description, dueDate, status });
+  const { title, description, dueDate, status, priority } = req.body;
+  if (!title || !description || !dueDate || !status || !priority) {
+    console.error('Validation error:', { title, description, dueDate, status, priority });
     return res.status(400).json({ message: "Please provide all fields" });
   }
 
@@ -13,6 +13,7 @@ export const createTask = async (req, res) => {
       description,
       dueDate: new Date(dueDate),
       status,
+      priority, // Include priority in task data
     };
     console.log('Creating task with data:', taskData);
     const task = await Task.create(taskData);
@@ -25,9 +26,9 @@ export const createTask = async (req, res) => {
 };
 
 export const updateTask = async (req, res) => {
-  const { title, description, dueDate, status } = req.body;
-  if (!title || !description || !dueDate || !status) {
-    console.error('Validation error:', { title, description, dueDate, status });
+  const { title, description, dueDate, status, priority } = req.body;
+  if (!title || !description || !dueDate || !status || !priority) {
+    console.error('Validation error:', { title, description, dueDate, status, priority });
     return res.status(400).json({ message: "Please provide all fields" });
   }
 
@@ -37,6 +38,7 @@ export const updateTask = async (req, res) => {
       description,
       dueDate: new Date(dueDate),
       status,
+      priority, // Include priority in task data
     };
     console.log('Updating task with data:', taskData, 'for ID:', req.params.id);
     const task = await Task.findByIdAndUpdate(

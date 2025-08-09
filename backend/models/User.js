@@ -1,47 +1,21 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    firstName: { 
-        type: String, 
-        required: [true, 'First name is required'],
-        trim: true
-    },
-    lastName: { 
-        type: String, 
-        required: [true, 'Last name is required'],
-        trim: true
-    },
-    address: { 
-        type: String, 
-        required: [true, 'Address is required'],
-        trim: true
-    },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    address: { type: String, required: true, trim: true },
     email: { 
-        type: String, 
-        required: [true, 'Email is required'],
-        unique: true,
-        trim: true,
-        lowercase: true,
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+        type: String, required: true, unique: true, lowercase: true, trim: true,
+        match: [/^\S+@\S+\.\S+$/, 'Invalid email format']
     },
-    phoneNumber: { 
-        type: String, 
-        required: [true, 'Phone number is required'],
-        trim: true
-    },
-    birthDate: { 
-        type: Date, 
-        required: [true, 'Birth date is required']
-    },
-    password: { 
-        type: String, 
-        required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters']
-    }
+    phoneNumber: { type: String, required: true, trim: true },
+    birthDate: { type: Date, required: true },
+    password: { type: String, required: true, minlength: 6 },
+    isAdmin: { type: Boolean, default: false }
 }, { 
     timestamps: true,
     toJSON: {
-        transform: function(doc, ret) {
+        transform: (doc, ret) => {
             delete ret.password;
             return ret;
         }
