@@ -13,39 +13,26 @@ function TaskForm() {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState('Pending');
-  const [priority, setPriority] = useState('Low'); // New state for Priority
+  const [priority, setPriority] = useState('Medium'); // New state for priority
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('TaskForm rendered with id:', id); // Debug log
-    // Skip fetch for new task (id === 'new')
-    if (id && id !== 'new') {
+    if (id) {
       const fetchTask = async () => {
         try {
-          const userToken = localStorage.getItem('userToken');
-          if (!userToken) {
-            setMessage('Please log in to edit tasks');
-            return;
-          }
-          console.log('Fetching task for ID:', id);
-          const res = await axios.get(`/api/tasks/${id}`, {
-            headers: { Authorization: `Bearer ${userToken}` },
-          });
-          console.log('Task data:', res.data);
+          console.log('Fetching task for ID:', id); // Debug log
+          const res = await axios.get(`/api/tasks/${id}`);
+          console.log('Task data:', res.data); // Debug log
           const task = res.data;
-          setTitle(task.title || '');
-          setDescription(task.description || '');
-          setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '');
-          setStatus(task.status || 'Pending');
-          setPriority(task.priority || 'Low'); // Set priority from fetched data
+          setTitle(task.title);
+          setDescription(task.description);
+          setDueDate(task.dueDate.split('T')[0]);
+          setStatus(task.status);
+          setPriority(task.priority); // Set priority from fetched data
         } catch (err) {
           console.error('Fetch error:', err.response?.data || err.message);
-          setMessage(
-            err.response?.status === 401
-              ? 'Unauthorized access. Please log in again.'
-              : 'Failed to load task'
-          );
+          setMessage('Failed to load task');
         }
       };
       fetchTask();
@@ -57,34 +44,19 @@ function TaskForm() {
     setLoading(true);
     setMessage('');
     const taskData = { title, description, dueDate, status, priority }; // Include priority
-    const userToken = localStorage.getItem('userToken');
-
-    if (!userToken) {
-      setMessage('Please log in to save tasks');
-      setLoading(false);
-      return;
-    }
 
     try {
-      if (id && id !== 'new') {
-        await axios.put(`/api/tasks/${id}`, taskData, {
-          headers: { Authorization: `Bearer ${userToken}` },
-        });
+      if (id) {
+        await axios.put(`/api/tasks/${id}`, taskData);
         setMessage('Task updated successfully');
       } else {
-        await axios.post('/api/tasks', taskData, {
-          headers: { Authorization: `Bearer ${userToken}` },
-        });
+        await axios.post('/api/tasks', taskData);
         setMessage('Task created successfully');
       }
       setTimeout(() => navigate('/tasklist'), 1500);
     } catch (err) {
       console.error('Submit error:', err.response?.data || err.message);
-      setMessage(
-        err.response?.status === 401
-          ? 'Unauthorized access. Please log in again.'
-          : err.response?.data?.message || 'Something went wrong'
-      );
+      setMessage(err.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -100,16 +72,19 @@ function TaskForm() {
       }}
     >
       <Header />
+
       <div className="flex flex-grow">
         <FixedSidebar />
+
         <main className="flex-grow flex items-center justify-center px-4 py-8 ml-64">
           <form
             onSubmit={handleSubmit}
             className="bg-white/90 p-6 rounded-lg shadow-md max-w-md w-full"
           >
             <h2 className="text-2xl font-bold mb-4 text-center">
-              {id === 'new' ? 'Add New Task' : 'Edit Task'}
+              {id ? 'Edit Task' : 'Add New Task'}
             </h2>
+
             <input
               type="text"
               placeholder="Task Title"
@@ -118,6 +93,7 @@ function TaskForm() {
               onChange={(e) => setTitle(e.target.value)}
               required
             />
+
             <textarea
               placeholder="Description"
               className="border p-2 mb-3 rounded w-full h-24"
@@ -125,6 +101,7 @@ function TaskForm() {
               onChange={(e) => setDescription(e.target.value)}
               required
             />
+
             <input
               type="date"
               className="border p-2 mb-3 rounded w-full"
@@ -132,6 +109,7 @@ function TaskForm() {
               onChange={(e) => setDueDate(e.target.value)}
               required
             />
+
             <select
               className="border p-2 mb-3 rounded w-full"
               value={status}
@@ -142,8 +120,9 @@ function TaskForm() {
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
             </select>
+
             <select
-              className="border p-2 mb-3 rounded w-full" // Matches existing select styling
+              className="border p-2 mb-3 rounded w-full"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               required
@@ -152,17 +131,20 @@ function TaskForm() {
               <option value="Medium">Medium</option>
               <option value="High">High</option>
             </select>
+
             <button
               type="submit"
               className="w-full bg-[#36013F] text-white p-2 rounded cursor-pointer hover:bg-[#2A012F] disabled:bg-gray-400"
               disabled={loading}
             >
-              {loading ? (id && id !== 'new' ? 'Updating...' : 'Creating...') : id && id !== 'new' ? 'Update Task' : 'Add Task'}
+              {loading ? (id ? 'Updating...' : 'Creating...') : id ? 'Update Task' : 'Add Task'}
             </button>
+
             {message && <p className="mt-3 text-gray-900">{message}</p>}
           </form>
         </main>
       </div>
+
       <Footer />
     </div>
   );

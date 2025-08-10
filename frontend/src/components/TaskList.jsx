@@ -13,21 +13,13 @@ function TaskList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userToken = localStorage.getItem('userToken');
-    if (!userToken) {
-      setMessage('Please log in to view tasks');
-      return;
-    }
-
     const fetchTasks = async () => {
       try {
-        const res = await axios.get('/tasks', { // Matches backend route
-          headers: { Authorization: `Bearer ${userToken}` },
-        });
+        const res = await axios.get('/api/tasks');
         setTasks(res.data);
       } catch (err) {
         console.error('Fetch tasks error:', err.response?.data || err.message);
-        setMessage('Failed to load tasks or unauthorized access');
+        setMessage('Failed to load tasks');
       } finally {
         setLoading(false);
       }
@@ -38,16 +30,13 @@ function TaskList() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
-        const userToken = localStorage.getItem('userToken');
-        await axios.delete(`/tasks/${id}`, {
-          headers: { Authorization: `Bearer ${userToken}` },
-        });
+        await axios.delete(`/api/tasks/${id}`);
         setTasks(tasks.filter(task => task._id !== id));
         setMessage('Task deleted successfully');
         setTimeout(() => setMessage(''), 2000);
       } catch (err) {
         console.error('Delete error:', err.response?.data || err.message);
-        setMessage('Failed to delete task or unauthorized access');
+        setMessage('Failed to delete task');
       }
     }
   };
@@ -89,7 +78,7 @@ function TaskList() {
                     <p className="text-gray-300 mb-2">{task.description}</p>
                     <p className="text-gray-400 mb-2">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
                     <p className="text-gray-400 mb-2">Status: {task.status}</p>
-                    <p className="text-gray-400 mb-2">Priority: {task.priority}</p> {/* New Priority display */}
+                    <p className="text-gray-400 mb-2">Priority: {task.priority}</p> {/* New priority display */}
                     <div className="flex space-x-2 mt-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleEdit(task._id); }}
@@ -108,6 +97,14 @@ function TaskList() {
                 ))}
               </div>
             )}
+            <div className="mt-4 text-center">
+              <Link
+                to="/tasks/new"
+                className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+              >
+                Add New Task
+              </Link>
+            </div>
           </div>
         </main>
       </div>

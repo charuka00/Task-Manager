@@ -42,6 +42,7 @@ function TaskDashboard() {
           <p className="text-gray-600 mb-2">{task.description}</p>
           <p className="text-gray-500 mb-2">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
           <p className="text-gray-500 mb-2">Status: {task.status}</p>
+          <p className="text-gray-500 mb-2">Priority: {task.priority}</p> {/* New priority display */}
           <Link
             to="/tasklist"
             className="bg-[#36013F] text-white px-4 py-2 rounded-lg hover:bg-[#2A012F] transition duration-300 mt-4 inline-block"
